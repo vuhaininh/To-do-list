@@ -4,8 +4,10 @@ var todoItem = "item";
 $( document ).ready(function() {
 	setDatePicker();
 	if(supports_html5_storage()){
-		if(getTotalWork() == null)
+		if(getTotalWork() == null){
 			setTotalWork(0);
+			setWorkList($.toJSON(new Array()));
+		}
 		displayTable();
 	}
 });
