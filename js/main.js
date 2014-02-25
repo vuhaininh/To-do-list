@@ -143,15 +143,15 @@ var todoListModule = (function () {
 			var today = new Date();
 			$('#'+id).datepicker('setValue', today)
 		}
-	   function init(){
-			myList = new TodoList("total","workList","item")
-			setDatePicker('dpd1');
+	   function init(total,worklist,item,dp,tableId){
+			myList = new TodoList(total,worklist,item)
+			setDatePicker(dp);
 			if(supports_html5_storage()){
 				if(myList.getTotalWork() == null){
 					myList.setTotalWork(0);
-					nyList.setWorkList($.toJSON(new Array()));
+					myList.setWorkList($.toJSON(new Array()));
 				}
-				displayTable('worklist');
+				displayTable(tableId);
 			}
 			else
 				alert ("Do not support this browser!");
@@ -168,7 +168,7 @@ var todoListModule = (function () {
 /***** ===END=== *****/
 
 $( document ).ready(function() {
-	todoListModule.init();
+	todoListModule.init("total2","workList2","item2","dpd1","worklist");
 });
 
 
