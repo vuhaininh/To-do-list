@@ -1,55 +1,86 @@
 /***** Refactor *****/
 var todoListModule = (function () {
-		var appKeys = {
-			totalWork:"total",
-			workList:"workList",
-			todoItem:"item"
-		}
-		function setTotalWork(total){
-			localStorage.setItem(appKeys.totalWork,total);
-		}
-		function getTotalWork(){
-			total = localStorage.getItem(appKeys.totalWork);
+		 var myList;
+         /*** MODEL ***/
+		/********* Todo item constructor************/
+		var Todo = function(id,description,date){
+			this.id=id;
+			this.description=description;
+			this.date=date;
+		};
+		
+		/********* TodoList constructor************/
+		var TodoList = function(totalWork,workList,todoItem){
+			this.totalWork = totalWork;
+			this.workList = workList;
+			this.todoItem = todoItem;
+		};
+		/********* TodoList Method************/
+		TodoList.prototype.setTotalWork = function(total){
+			localStorage.setItem(this.totalWork,total);
+		};
+		TodoList.prototype.getTotalWork = function(){
+			total = localStorage.getItem(this.totalWork);
 			if (total == null)
 				return total;
 			else
 				return parseInt(total);
-		}
-		function getWorkList(){
-			wl = localStorage.getItem(appKeys.workList);
+		};
+		/********* Get Todo List************/
+		TodoList.prototype.getWorkList = function(){
+			wl = localStorage.getItem(this.workList);
 			return wl;	
-		}
-		function setWorkList(worklist){
-			localStorage.setItem(appKeys.workList,worklist);
-		}
-		function todo(id,description,date)
-		{
-			this.id=id;
-			this.description=description;
-			this.date=date;
-		}
-
+		};
+		/********* Set Todo List************/
+		TodoList.prototype.setWorkList = function(worklist){
+			localStorage.setItem(this.workList,worklist);	
+		};
+		/********* Add 1 more item into Todo List************/
+		TodoList.prototype.addWorkList = function(id){
+			var worklist;
+			if (this.getWorkList() == null)
+				worklist = new Array();
+			else
+				worklist = $.evalJSON(this.getWorkList());
+			worklist.push(id);
+			this.setWorkList($.toJSON(worklist));
+		};
+		/********* Remove 1 item from Todo List************/
+		TodoList.prototype.removeWorkList = function(id){
+			worklist = $.evalJSON(this.getWorkList());
+			index = worklist.indexOf(parseInt(id));
+			worklist.splice(index,1);
+			localStorage.removeItem(this.todoItem+id);
+			this.setWorkList($.toJSON(worklist));
+		};
+		/********* Add new Todo************/
+		TodoList.prototype.addNewWork = function(description, date){
+			id = this.getTotalWork()+1;
+			localStorage.setItem(this.todoItem+id, $.toJSON(new Todo(id,description,date)));
+			this.setTotalWork(this.getTotalWork()+1);
+			this.addWorkList(id);
+		};	
+		/********* Delete Todo************/
+		TodoList.prototype.deleteWork = function(id){
+			this.removeWorkList(id);
+		};	
+		/********* Edit Todo************/
+		TodoList.prototype.updateWork = function(todo){
+			localStorage.setItem(this.todoItem+todo.id, $.toJSON(todo));
+		};	
+		
+		/*** ===END MODEL=== ***/
+	
 		function addNew(tableId,descriptionId, dateId){
-			id = getTotalWork()+1;
 			description = $('#'+descriptionId).val();
-			date = $('#'+dateId).val() 
-			localStorage.setItem(appKeys.todoItem+id, $.toJSON(new todo(id,description,date)));
-			setTotalWork(getTotalWork()+1);
-			$("#"+tableId+" > tbody").append("<tr><td>"+($.evalJSON(getWorkList()).length+1)+"</td>"+
+			date = $('#'+dateId).val();
+			myList.addNewWork(description, date);
+			$("#"+tableId+" > tbody").append("<tr><td>"+($.evalJSON(myList.getWorkList()).length)+"</td>"+
 												"<td>"+description+"</td>"+
 												"<td>"+date+"</td>"+
 												"<td><button type='button' class='btn btn-primary' onclick = 'todoListModule.deleteWork(this)' value='"+id+"'>Delete</button></td>"+
 												"<td><button type='button' class='btn btn-primary' onclick = 'todoListModule.editWork(this)' value='"+id+"'>Edit</button></td></tr>");
-			var worklist;
-			if (getWorkList() == null)
-				worklist = new Array();
-			else
-				worklist = $.evalJSON(getWorkList());
-			worklist.push(id);
-			setWorkList($.toJSON(worklist));
-		
-		}
-		
+		}		
 		function editItem(button){
 			var tr = $(button).closest('tr');
 			$('td',tr).each(function() {
@@ -79,29 +110,25 @@ var todoListModule = (function () {
 				if($(this).index() == 4)
 					$(this).html("<button type='button' class='btn btn-primary' onclick = 'todoListModule.editWork(this)' value='"+button.value+"'>Edit</button>");
 			});
-			item = $.evalJSON(localStorage.getItem(appKeys.todoItem+button.value));
+			item = $.evalJSON(localStorage.getItem(myList.todoItem+button.value));
 			item.description = editDes;
 			item.date = editDate;
-			localStorage.setItem(appKeys.todoItem+button.value, $.toJSON(item));
+			myList.updateWork(item);
 		}
 		function deleteItem(button){
-			worklist = $.evalJSON(getWorkList());
-			index = worklist.indexOf(parseInt(button.value));
-			worklist.splice(index,1);
-			localStorage.removeItem(appKeys.todoItem+button.value);
-			setWorkList($.toJSON(worklist));
+			myList.deleteWork(button.value);
 			var tr = $(button).closest('tr');
 			tr.fadeOut(400, function(){
 					tr.remove();
 				});
 		}
 		function displayTable(tableId){
-			var worklist = getWorkList();
+			var worklist = myList.getWorkList();
 			if(worklist != null){
-				worklist = $.evalJSON(getWorkList());
+				worklist = $.evalJSON(myList.getWorkList());
 				for(i = 0; i < worklist.length; i++){
 					id = worklist[i];
-					item = $.evalJSON(localStorage.getItem(appKeys.todoItem+id));
+					item = $.evalJSON(localStorage.getItem(myList.todoItem+id));
 					$("#"+tableId+" > tbody").append("<tr><td>"+(i+1)+"</td><td>"+item.description+"</td><td>"+item.date+"</td><td><button type='button' class='btn btn-primary' onclick = 'todoListModule.deleteWork(this)' value='"+id+"'>Delete</button></td><td><button type='button' class='btn btn-primary' onclick = 'todoListModule.editWork(this)' value='"+id+"'>Edit</button></td></tr>");
 				}
 			}
@@ -117,11 +144,12 @@ var todoListModule = (function () {
 			$('#'+id).datepicker('setValue', today)
 		}
 	   function init(){
+			myList = new TodoList("total","workList","item")
 			setDatePicker('dpd1');
 			if(supports_html5_storage()){
-				if(getTotalWork() == null){
-					setTotalWork(0);
-					setWorkList($.toJSON(new Array()));
+				if(myList.getTotalWork() == null){
+					myList.setTotalWork(0);
+					nyList.setWorkList($.toJSON(new Array()));
 				}
 				displayTable('worklist');
 			}
